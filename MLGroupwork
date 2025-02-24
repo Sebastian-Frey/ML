@@ -636,3 +636,51 @@ print("\n🔹 Best Polynomial Logistic Regression Model")
 print("Best Parameters:", grid_search.best_params_)
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred_poly_tuned))
+
+
+# Collect model predictions and compute classification reports
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+# Define a function to evaluate models
+def evaluate_model(model, X_test, y_test, threshold=0.5):
+    """
+    Computes accuracy, precision, recall, and F1-score for a given model.
+    Allows for threshold tuning when applicable.
+    """
+    if hasattr(model, "predict_proba"):
+        y_pred_prob = model.predict_proba(X_test)[:, 1]
+        y_pred = (y_pred_prob >= threshold).astype(int)
+    else:
+        y_pred = model.predict(X_test)
+
+    return {
+        "Accuracy": accuracy_score(y_test, y_pred),
+        "Precision (Attrition = 1)": precision_score(y_test, y_pred, zero_division=0),
+        "Recall (Attrition = 1)": recall_score(y_test, y_pred),
+        "F1-Score (Attrition = 1)": f1_score(y_test, y_pred)
+    }
+
+# Evaluate all models
+model_results = {
+    "Logistic Regression": evaluate_model(log_reg, X_test_scaled, y_test),
+    "Tuned Logistic Regression": evaluate_model(log_reg_tuned, X_test_scaled, y_test),
+    "Random Forest": evaluate_model(rf_model, X_test_scaled, y_test),
+    "Tuned Random Forest": evaluate_model(rf_tuned, X_test_reduced, y_test),
+    "XGBoost": evaluate_model(xgb_model, X_test_scaled, y_test),
+    "Optimized XGBoost": evaluate_model(xgb_optimized, X_test_scaled, y_test),
+    "Tuned XGBoost": evaluate_model(xgb_tuned, X_test_scaled, y_test),
+    "Gradient Boosting": evaluate_model(gb_model, X_test_scaled, y_test),
+    "Gradient Boosting (Threshold 0.22)": evaluate_model(gb_model, X_test_scaled, y_test, threshold=0.22),
+    "CatBoost": evaluate_model(cat_model, X_test_scaled, y_test),
+    "LightGBM": evaluate_model(lgbm_model, X_test_scaled, y_test),
+    "Polynomial Logistic Regression": evaluate_model(poly_log_reg, X_test_scaled, y_test),
+    "Tuned Polynomial Logistic Regression": evaluate_model(best_poly_model, X_test_scaled, y_test),
+    "Neural Network": evaluate_model(mlp_model, X_test_scaled, y_test)
+}
+
+# Convert results to DataFrame
+df_model_performance = pd.DataFrame.from_dict(model_results, orient="index")
+
+# Display the performance table
+tools.display_dataframe_to_user(name="Model Performance Comparison", dataframe=df_model_performance)
+
